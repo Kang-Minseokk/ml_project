@@ -170,7 +170,7 @@ class DataAugmentation:
         return augmented.flatten()
     
     @staticmethod
-    def generate_synthetic_samples(X, y, noise_factor=0.05, n_synthetic_per_sample=2):
+    def generate_synthetic_samples(X, y, noise_factor=0.1, n_synthetic_per_sample=2):
         """
         Generate synthetic samples by adding small Gaussian noise
         This helps with data augmentation and prevents overfitting
@@ -201,10 +201,10 @@ class ShapeClassifierModel:
     Uses Random Forest with augmented features
     """
     
-    def __init__(self, n_estimators=100, random_state=42):
+    def __init__(self, n_estimators=1, random_state=42):
         self.model = RandomForestClassifier(
             n_estimators=n_estimators,
-            max_depth=15,
+            max_depth=5,
             min_samples_split=5,
             min_samples_leaf=2,
             random_state=random_state,
