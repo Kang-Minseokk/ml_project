@@ -1,0 +1,35 @@
+{
+  "overall_accuracy": 0.9285714285714286,
+  "precision_per_class": {
+    "circle": 1.0,
+    "diagonal_left": 0.75,
+    "diagonal_right": 1.0,
+    "horizontal": 1.0,
+    "vertical": 1.0
+  },
+  "recall_per_class": {
+    "circle": 1.0,
+    "diagonal_left": 1.0,
+    "diagonal_right": 1.0,
+    "horizontal": 1.0,
+    "vertical": 0.5
+  },
+  "f1_per_class": {
+    "circle": 1.0,
+    "diagonal_left": 0.8571428571428571,
+    "diagonal_right": 1.0,
+    "horizontal": 1.0,
+    "vertical": 0.6666666666666666
+  },
+  "macro_f1": 0.9047619047619048,
+  "weighted_f1": 0.9217687074829932,
+  "balanced_accuracy": 0.9,
+  "avg_confidence": 0.6531354729034262,
+  "confidence_std": 0.12516800186025717,
+  "roc_auc_circle": 1.0,
+  "roc_auc_diagonal_left": 1.0,
+  "roc_auc_diagonal_right": 1.0,
+  "roc_auc_horizontal": 1.0,
+  "roc_auc_vertical": 1.0,
+  "total_error_rate": 0.07142857142857142
+}
