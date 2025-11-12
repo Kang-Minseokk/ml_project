@@ -10,20 +10,20 @@
 
 ```
 2025_ml_project/
-├── 1st_data/                    # 원본 데이터
+├── raw_data/                    # 원본 데이터
 │   ├── circle/                  # 원형 패턴 (8개 파일)
 │   ├── diagonal_left/           # 좌측 대각선 (7개 파일)
 │   ├── diagonal_right/          # 우측 대각선 (7개 파일)
 │   ├── horizontal/              # 수평선 (6개 파일)
 │   └── vertical/                # 수직선 (6개 파일)
-├── ml_project.py                # 메인 프로젝트 코드
-├── results/                     # 평가 결과
-│   ├── confusion_matrix.png
-│   ├── f1_scores.png
-│   ├── accuracy_by_class.png
-│   ├── confidence_distribution.png
-│   └── evaluation_metrics.json
-└── README.md
+├── preprocessor.py              # 데이터 전처리 코드
+├── preprocessed_data/           # 평가 결과
+│   ├── circle/
+│   ├── diagonal_left/
+│   ├── diagonal_right/
+│   ├── horizontal/
+│   └── vertical/
+└── augment.py                   # 데이터 증강 코드 (현재 개발중🚀)
 ```
 
 ---
