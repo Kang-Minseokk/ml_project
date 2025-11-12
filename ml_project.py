@@ -27,104 +27,95 @@ import json
 # 1. DATA LOADING AND AUGMENTATION
 # ============================================================================
 
-class DataLoader:
-    """Load and manage dataset from directory structure"""
-    
+class DataLoader:        
     def __init__(self, base_path):
         self.base_path = Path(base_path)
         self.data = []
         self.labels = []
         self.categories = []
         
-    def load_data(self):
-        """Load all txt files from category folders"""
+    def load_data(self):        
         print("=" * 70)
-        print("STEP 1: DATA LOADING AND EXPLORATION")
+        print("STEP 1: 데이터 로딩을 하고, 전처리 과정을 거쳐봅시다")
         print("=" * 70)
         
         data_path = self.base_path / "1st_data"
+        save_root = self.base_path / "preprocessed_data"
         
         for category_dir in sorted(data_path.iterdir()):
             if not category_dir.is_dir():
                 continue
                 
-            category_name = category_dir.name
+            category_name = category_dir.name                        
             self.categories.append(category_name)
             print(f"\nLoading category: {category_name}")
+            
+            # 저장을 하기 위한 디렉토리를 생성합니다
+            (save_root / category_name).mkdir(parents=True, exist_ok=True)
             
             txt_files = sorted(category_dir.glob("*.txt"))
             print(f"  Found {len(txt_files)} files")
             
             for txt_file in txt_files:
-                features = self._parse_txt_file(txt_file)
+                features = self._parse_txt_file(txt_file)                
                 if features is not None:
                     self.data.append(features)
                     self.labels.append(category_name)
-        
-        print(f"\nTotal samples loaded: {len(self.data)}")
-        print(f"Categories: {self.categories}")
-        print(f"Label distribution:")
-        for cat in self.categories:
-            count = self.labels.count(cat)
-            print(f"  {cat}: {count} samples")
-        
-        # Pad or truncate features to same length
-        if len(self.data) > 0:
-            # Find max length
-            max_len = max(len(f) for f in self.data)
-            print(f"\nFeature vector length: {max_len}")
-            
-            # Pad all features to max length
-            padded_data = []
-            for features in self.data:
-                if len(features) < max_len:
-                    padded = np.pad(features, (0, max_len - len(features)), mode='constant')
-                else:
-                    padded = features[:max_len]
-                padded_data.append(padded)
-            
-            return np.array(padded_data), np.array(self.labels)
-        
-        return np.array(self.data), np.array(self.labels)
-    
+                    
+                    # 실제로 저장하게 되는 데이터를 가공해봅니다.
+                    arr = features.reshape(-1, 3)
+                    
+                    save_path = save_root / category_name / txt_file.name
+                    
+                    with open(save_path, "w") as f:
+                        for row in arr:
+                            f.write(f"{int(row[0])},{int(row[1])},{int(row[2])}\n")
+                    
+                    print(f"    전처리 데이터 저장 완료! -> {save_path}")
+            breakpoint()        
+                                    
     def _parse_txt_file(self, filepath):
         """
         Parse a single txt file
-        Format: r,<id>,<timestamp>,<values_group1>,<values_group2>,...
-        Extract numeric features from the file
+        Format: r,<id>,<timestamp>,<values_group1>,...
+        Extract only index=6 (7th item) as numeric feature
         """
         try:
             with open(filepath, 'r') as f:
-                lines = f.readlines()
+                lines = f.readlines()                
             
-            # Collect all numeric values from all lines
             all_values = []
+
             for line in lines:
                 if line.startswith('r,') or line.startswith('s,'):
-                    # Parse comma-separated values
                     parts = line.strip().split(',')
-                    # Extract numeric values (skip first 3 parts: type, id, timestamp)
-                    for part in parts[3:]:
-                        if part and part != '#':
+
+                    # Ensure index 6 exists
+                    if len(parts) > 6:
+                        value = parts[6]   # 7th column (index 6)                        
+
+                        if value and value != '#':
                             try:
-                                # Handle values with slashes (e.g., "61/63/38/61")
-                                if '/' in part:
-                                    numeric_parts = [int(p) for p in part.split('/')]
-                                    all_values.extend(numeric_parts)
+                                # e.g. "61/63/38/61"
+                                if '/' in value:
+                                    nums = [int(p) for p in value.split('/')]
+                                    all_values.extend(nums)
                                 else:
-                                    all_values.append(int(part))
+                                    all_values.append(int(value))
                             except (ValueError, TypeError):
                                 pass
             
+            # breakpoint()
+            
             if len(all_values) == 0:
                 return None
-            
-            # Convert to numpy array and return as feature vector
+
             return np.array(all_values, dtype=np.float32)
-            
+        
         except Exception as e:
             print(f"  Error reading {filepath}: {e}")
             return None
+
 
 
 class DataAugmentation:
@@ -201,10 +192,10 @@ class ShapeClassifierModel:
     Uses Random Forest with augmented features
     """
     
-    def __init__(self, n_estimators=1, random_state=42):
+    def __init__(self, n_estimators=100, random_state=42):
         self.model = RandomForestClassifier(
             n_estimators=n_estimators,
-            max_depth=5,
+            max_depth=2,
             min_samples_split=5,
             min_samples_leaf=2,
             random_state=random_state,
@@ -433,6 +424,39 @@ class CustomEvaluator:
         plt.savefig(os.path.join(save_path, 'accuracy_by_class.png'), dpi=300)
         plt.close()
         
+        # 5. 3D Trajectory Visualization
+        try:
+            for idx, sample in enumerate(self.X_test):
+                category = self.y_test[idx]                                
+                original_path = self.paths_test[idx].name.replace(".txt", "")                                
+                coords = sample.reshape(-1, 3)                
+                coords = coords[~(coords == 0).all(axis=1)]
+
+                if len(coords) == 0:
+                    continue
+
+                xs, ys, zs = coords[:, 0], coords[:, 1], coords[:, 2]
+
+                fig = plt.figure(figsize=(8, 6))
+                ax = fig.add_subplot(111, projection='3d')
+
+                ax.plot(xs, ys, zs, marker='o', markersize=3)
+
+                ax.set_title(f"{category} — {original_path}")
+                ax.set_xlabel("X")
+                ax.set_ylabel("Y")
+                ax.set_zlabel("Z")
+
+                plt.tight_layout()
+
+                out_path = os.path.join(save_path, f"{category}_{original_path}.png")
+                plt.savefig(out_path, dpi=200)
+                plt.close()
+            print("3D Trajectory plots saved.")
+        
+        except Exception as e:
+            print(f"3D trajectory plotting failed: {e}")
+            
         print(f"\nVisualizations saved to '{save_path}/' directory")
 
 
@@ -443,7 +467,7 @@ class CustomEvaluator:
 def main():
     """Execute the full ML pipeline"""
     
-    base_path = r"c:\Projects\2025_ml_project"
+    base_path = ""
     
     # Step 1: Load and augment data
     print("\n" + "=" * 70)
@@ -451,7 +475,32 @@ def main():
     print("=" * 70)
     
     loader = DataLoader(base_path)
-    X, y = loader.load_data()
+    X, y = loader.load_data() # 여기는 문제가 없어
+    
+    for i in range(len(X)):
+        record = X[i]
+
+        # (1899,) → (-1, 3)
+        try:
+            coords = record.reshape(-1, 3)
+        except:
+            print(f"[!] Row {i} shape {record.shape} cannot reshape into (-1,3)")
+            continue
+
+        # (0,0,0) 제거
+        coords = coords[~(coords == 0).all(axis=1)]
+
+        # 저장 경로
+        filepath = os.path.join("coords_txt", f"{i}.txt")
+
+        # 항상 새로 만들기 (없으면 생성, 있으면 overwrite)
+        with open(filepath, "w") as f:
+            for (x, y, z) in coords:
+                f.write(f"{x} {y} {z}\n")
+
+        print(f"Saved: {filepath}")
+    
+    breakpoint()    
     
     # Feature engineering and augmentation
     print("\n" + "=" * 70)
@@ -471,13 +520,13 @@ def main():
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(
         X_augmented, y, test_size=0.2, random_state=42, stratify=y
-    )
+    )    
     
     print(f"\nTrain set: {X_train.shape[0]} samples")
     print(f"Test set: {X_test.shape[0]} samples")
     
     # Step 2: Train model
-    model = ShapeClassifierModel(n_estimators=150)
+    model = ShapeClassifierModel(n_estimators=2)
     model.train(X_train, y_train)
     
     # Step 3: Evaluate model
