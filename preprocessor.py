@@ -24,12 +24,12 @@ from datetime import datetime
 import json
 
 # ============================================================================
-# 1. DATA LOADING AND AUGMENTATION
+# 1. DataPreprocessor의 두 가지 역할 : data_path에 있는 데이터를 save_root에 저장을 하는 역할과 
+#    우리가 필요로 하는 데이터인 x, y, z라고 하는 좌표만으로 이루어진 구조로 데이터를 전처리하는 역할
 # ============================================================================
 
-class DataLoader:        
-    def __init__(self, base_path):
-        self.base_path = Path(base_path)
+class DataPreprocessor:        
+    def __init__(self):        
         self.data = []
         self.labels = []
         self.categories = []
@@ -39,8 +39,8 @@ class DataLoader:
         print("STEP 1: 데이터 로딩을 하고, 전처리 과정을 거쳐봅시다")
         print("=" * 70)
         
-        data_path = self.base_path / "1st_data"
-        save_root = self.base_path / "preprocessed_data"
+        data_path =  Path("raw_data")
+        save_root = Path("preprocessed_data")
         
         for category_dir in sorted(data_path.iterdir()):
             if not category_dir.is_dir():
@@ -115,7 +115,6 @@ class DataLoader:
         except Exception as e:
             print(f"  Error reading {filepath}: {e}")
             return None
-
 
 
 class DataAugmentation:
@@ -242,239 +241,12 @@ class ShapeClassifierModel:
 
 
 # ============================================================================
-# 3. CUSTOM EVALUATION METRICS
-# ============================================================================
-
-class CustomEvaluator:
-    """
-    Custom evaluation framework with multiple metrics
-    Metrics designed for imbalanced multi-class classification
-    """
-    
-    def __init__(self, model, X_test, y_test, classes):
-        self.model = model
-        self.X_test = X_test
-        self.y_test = y_test
-        self.classes = classes
-        self.y_pred = model.predict(X_test)
-        self.y_pred_proba = model.predict_proba(X_test)
-        
-    def evaluate(self):
-        """Compute all evaluation metrics"""
-        print("\n" + "=" * 70)
-        print("STEP 3: MODEL EVALUATION WITH CUSTOM METRICS")
-        print("=" * 70)
-        
-        results = {}
-        
-        # 1. Overall Accuracy
-        accuracy = accuracy_score(self.y_test, self.y_pred)
-        results['overall_accuracy'] = accuracy
-        print(f"\n[METRIC 1] Overall Accuracy: {accuracy:.4f}")
-        
-        # 2. Per-class Metrics (Precision, Recall, F1)
-        print("\n[METRIC 2] Per-Class Metrics (Precision, Recall, F1):")
-        precision = precision_score(self.y_test, self.y_pred, average=None)
-        recall = recall_score(self.y_test, self.y_pred, average=None)
-        f1 = f1_score(self.y_test, self.y_pred, average=None)
-        
-        for i, cls in enumerate(self.classes):
-            print(f"  {cls:20s}: P={precision[i]:.4f}, R={recall[i]:.4f}, F1={f1[i]:.4f}")
-        
-        results['precision_per_class'] = dict(zip(self.classes, precision))
-        results['recall_per_class'] = dict(zip(self.classes, recall))
-        results['f1_per_class'] = dict(zip(self.classes, f1))
-        
-        # 3. Macro and Weighted Averages (for imbalanced data)
-        print("\n[METRIC 3] Averaged Metrics (for imbalanced data):")
-        macro_f1 = f1_score(self.y_test, self.y_pred, average='macro')
-        weighted_f1 = f1_score(self.y_test, self.y_pred, average='weighted')
-        print(f"  Macro F1 (unweighted): {macro_f1:.4f}")
-        print(f"  Weighted F1 (class-size weighted): {weighted_f1:.4f}")
-        
-        results['macro_f1'] = macro_f1
-        results['weighted_f1'] = weighted_f1
-        
-        # 4. Confusion Matrix Analysis
-        print("\n[METRIC 4] Confusion Matrix Analysis:")
-        cm = confusion_matrix(self.y_test, self.y_pred)
-        
-        # Per-class error rates
-        print("  Per-class Error Rates:")
-        for i, cls in enumerate(self.classes):
-            total = cm[i].sum()
-            correct = cm[i, i]
-            error_rate = 1 - (correct / total) if total > 0 else 0
-            print(f"    {cls}: {error_rate:.4f} ({total - correct}/{total} errors)")
-        
-        results['confusion_matrix'] = cm.tolist()
-        
-        # 5. Balanced Accuracy (handles class imbalance)
-        print("\n[METRIC 5] Balanced Accuracy (per-class average recall):")
-        balanced_acc = recall.mean()
-        print(f"  Balanced Accuracy: {balanced_acc:.4f}")
-        results['balanced_accuracy'] = balanced_acc
-        
-        # 6. Confidence Analysis
-        print("\n[METRIC 6] Prediction Confidence Analysis:")
-        max_proba = np.max(self.y_pred_proba, axis=1)
-        avg_confidence = np.mean(max_proba)
-        std_confidence = np.std(max_proba)
-        print(f"  Average Confidence: {avg_confidence:.4f}")
-        print(f"  Confidence Std Dev: {std_confidence:.4f}")
-        print(f"  Confidence Range: [{np.min(max_proba):.4f}, {np.max(max_proba):.4f}]")
-        
-        results['avg_confidence'] = avg_confidence
-        results['confidence_std'] = std_confidence
-        
-        # 7. ROC-AUC for binary comparisons (One-vs-Rest)
-        print("\n[METRIC 7] ROC-AUC Scores (One-vs-Rest for each class):")
-        try:
-            # For multi-class, compute OvR AUC
-            from sklearn.preprocessing import label_binarize
-            y_test_bin = label_binarize(self.y_test, classes=self.classes)
-            
-            for i, cls in enumerate(self.classes):
-                if len(np.unique(self.y_test)) > 1:
-                    try:
-                        auc_score = roc_auc_score(y_test_bin[:, i], self.y_pred_proba[:, i])
-                        print(f"  {cls}: {auc_score:.4f}")
-                        results[f'roc_auc_{cls}'] = auc_score
-                    except:
-                        print(f"  {cls}: N/A (single class in test set)")
-        except Exception as e:
-            print(f"  AUC calculation skipped: {e}")
-        
-        # 8. Error Distribution Analysis
-        print("\n[METRIC 8] Error Type Analysis:")
-        errors = self.y_test != self.y_pred
-        error_rate = errors.mean()
-        print(f"  Total Error Rate: {error_rate:.4f}")
-        
-        if error_rate > 0:
-            print(f"  Most Common Misclassification:")
-            for i, pred_class in enumerate(self.y_pred[errors]):
-                true_class = self.y_test[errors][i]
-                print(f"    {true_class} -> {pred_class}")
-        
-        results['total_error_rate'] = error_rate
-        
-        return results
-    
-    def visualize_results(self, save_path="results"):
-        """Generate visualizations"""
-        os.makedirs(save_path, exist_ok=True)
-        
-        # 1. Confusion Matrix Heatmap
-        plt.figure(figsize=(10, 8))
-        cm = confusion_matrix(self.y_test, self.y_pred)
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-                   xticklabels=self.classes, yticklabels=self.classes)
-        plt.title('Confusion Matrix')
-        plt.ylabel('True Label')
-        plt.xlabel('Predicted Label')
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_path, 'confusion_matrix.png'), dpi=300)
-        plt.close()
-        
-        # 2. Per-class F1 Scores
-        f1 = f1_score(self.y_test, self.y_pred, average=None)
-        plt.figure(figsize=(10, 6))
-        plt.bar(self.classes, f1, color='steelblue')
-        plt.ylabel('F1 Score')
-        plt.xlabel('Class')
-        plt.title('Per-Class F1 Scores')
-        plt.ylim([0, 1.0])
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_path, 'f1_scores.png'), dpi=300)
-        plt.close()
-        
-        # 3. Confidence Distribution
-        max_proba = np.max(self.y_pred_proba, axis=1)
-        plt.figure(figsize=(10, 6))
-        plt.hist(max_proba, bins=30, color='skyblue', edgecolor='black')
-        plt.xlabel('Prediction Confidence')
-        plt.ylabel('Frequency')
-        plt.title('Distribution of Prediction Confidence')
-        plt.axvline(np.mean(max_proba), color='red', linestyle='--', label=f'Mean: {np.mean(max_proba):.3f}')
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_path, 'confidence_distribution.png'), dpi=300)
-        plt.close()
-        
-        # 4. Accuracy by Class
-        accuracy_per_class = []
-        for i, cls in enumerate(self.classes):
-            mask = self.y_test == cls
-            if mask.sum() > 0:
-                acc = accuracy_score(self.y_test[mask], self.y_pred[mask])
-                accuracy_per_class.append(acc)
-            else:
-                accuracy_per_class.append(0)
-        
-        plt.figure(figsize=(10, 6))
-        plt.bar(self.classes, accuracy_per_class, color='lightgreen')
-        plt.ylabel('Accuracy')
-        plt.xlabel('Class')
-        plt.title('Per-Class Accuracy')
-        plt.ylim([0, 1.0])
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_path, 'accuracy_by_class.png'), dpi=300)
-        plt.close()
-        
-        # 5. 3D Trajectory Visualization
-        try:
-            for idx, sample in enumerate(self.X_test):
-                category = self.y_test[idx]                                
-                original_path = self.paths_test[idx].name.replace(".txt", "")                                
-                coords = sample.reshape(-1, 3)                
-                coords = coords[~(coords == 0).all(axis=1)]
-
-                if len(coords) == 0:
-                    continue
-
-                xs, ys, zs = coords[:, 0], coords[:, 1], coords[:, 2]
-
-                fig = plt.figure(figsize=(8, 6))
-                ax = fig.add_subplot(111, projection='3d')
-
-                ax.plot(xs, ys, zs, marker='o', markersize=3)
-
-                ax.set_title(f"{category} — {original_path}")
-                ax.set_xlabel("X")
-                ax.set_ylabel("Y")
-                ax.set_zlabel("Z")
-
-                plt.tight_layout()
-
-                out_path = os.path.join(save_path, f"{category}_{original_path}.png")
-                plt.savefig(out_path, dpi=200)
-                plt.close()
-            print("3D Trajectory plots saved.")
-        
-        except Exception as e:
-            print(f"3D trajectory plotting failed: {e}")
-            
-        print(f"\nVisualizations saved to '{save_path}/' directory")
-
-
-# ============================================================================
 # MAIN PIPELINE
 # ============================================================================
 
-def main():
-    """Execute the full ML pipeline"""
-    
-    base_path = ""
-    
-    # Step 1: Load and augment data
-    print("\n" + "=" * 70)
-    print("MACHINE LEARNING PROJECT: SHAPE CLASSIFICATION")
-    print("=" * 70)
-    
-    loader = DataLoader(base_path)
+def main():          
+    # x, y, z좌표만을 추출해내는 작업도 함께 DataPreprocessor가 해줍니다                  
+    loader = DataPreprocessor()
     X, y = loader.load_data() # 여기는 문제가 없어
     
     for i in range(len(X)):
@@ -534,7 +306,7 @@ def main():
     results = evaluator.evaluate()
     
     # Visualize results
-    evaluator.visualize_results(save_path=os.path.join(base_path, 'results'))
+    evaluator.visualize_results(save_path=os.path.join('visualization', 'results'))
     
     # Save results
     results_json = {k: v for k, v in results.items() if k != 'confusion_matrix'}
