@@ -58,8 +58,8 @@ def plot_and_save(xs, ys, zs, title: str, out_png: Path):
 
 def main():
     project_root = Path(__file__).resolve().parent
-    src_root = project_root / "preprocessed_data"
-    dst_root = project_root / "visualization_preprocessed_data"
+    src_root = project_root / "augmented_data"
+    dst_root = project_root / "visualization_augmented_data"
     if not src_root.exists():
         raise FileNotFoundError(f"Not found: {src_root}")
 
