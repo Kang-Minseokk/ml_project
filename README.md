@@ -1,5 +1,5 @@
 # 2025_ML_PROJECT
-
+![증강과정까지의 플로우차트](./README_IMAGES/증강과정_플로우차트_이미지.png)
 ## 1. 프로젝트 개요
 이 프로젝트의 목표는 손이나 도구의 움직임 궤적(trajectory) 데이터를 분석해  
 그 궤적이 **circle**, **diagonal**, **horizontal**, **vertical** 중 어느 형태인지 분류하는 것이다.
