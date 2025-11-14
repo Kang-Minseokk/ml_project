@@ -24,9 +24,6 @@
 4. 이 값을 `x/y/z` 형태로 변환하여  
    `preprocessed_data/<category>/<file>.txt` 로 저장한다.
 
-예시: 원본: r, 0.3, 0.7, 1.2, 3.5, 2.1, 445, -304, -134
-      결과: 445/-304/-134
-
 
 ---
 
@@ -37,8 +34,8 @@
 
 ### 방법
 - `preprocessed_data`에 있는 모든 좌표 파일을 불러와 3D 라인 플롯으로 그린다.
-- 이미지 파일(`.png`)로 저장하며 저장 위치는 다음과 같다
-- : visualization_preprocessed_data/<category>/<file>.png
+- 이미지 파일(`.png`)로 저장하며 저장 위치와 형식은 다음과 같다
+- : visualization_preprocessed_data/category/file.png
 
 
 ### 참고
@@ -94,31 +91,31 @@ x축, y축, z축 기준으로 궤적을 회전시킨다.
 
 ### 증강 결과 저장 구조
 증강된 궤적은 다음 폴더에 저장된다
-: augmented_data/<category>/<원본이름>__aug001.txt
+: augmented_data/category/<원본이름>__aug001.txt
 
 
 ---
 
 ## 5. 전체 작업 흐름 요약
-raw_data
-↓ (필요한 좌표만 추출)
-preprocessed_data
-↓ (3D 궤적 시각화)
-visualization_preprocessed_data
-↓ (데이터 증강)
-augmented_data
+raw_data<br>
+↓ (필요한 좌표만 추출)<br>
+preprocessed_data<br>
+↓ (3D 궤적 시각화)<br>
+visualization_preprocessed_data<br>
+↓ (데이터 증강)<br>
+augmented_data<br>
 
 
 ---
 
 ## 6. 다음 단계 안내 (Sub-quests #2 ~ #3)
 
-### 1) Sub-quest 2: 모델 설계 및 학습
+### Sub-quest 2: 모델 설계 및 학습
 - 전처리 + 증강된 데이터를 사용해  
   궤적을 **circle / diagonal / horizontal / vertical** 중 어느 범주인지 분류하는 모델을 만든다.
 - 딥러닝 또는 전통 ML 기법 모두 가능하다.
 
-### 2) Sub-quest 3: 모델 평가 지표 제작
+### Sub-quest 3: 모델 평가 지표 제작
 - 모델이 얼마나 잘 작동하는지 확인하기 위해  
   **자체적인 평가 기준(evaluator)** 을 설계해야 한다.
 - 단순 정확도 말고, 궤적의 특징을 반영한 새로운 평가 방법을 고려할 수 있다.
