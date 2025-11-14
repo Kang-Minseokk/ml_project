@@ -42,7 +42,7 @@ def set_axes_equal(ax):
 def plot_and_save(xs, ys, zs, title: str, out_png: Path):
     fig = plt.figure(figsize=(6, 6), dpi=160)
     ax = fig.add_subplot(111, projection="3d")
-    ax.plot(xs, ys, zs, linewidth=1.5)
+    ax.plot(xs, ys, zs, linewidth=1.5, color='red')
     ax.set_title(title)
     ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
     
