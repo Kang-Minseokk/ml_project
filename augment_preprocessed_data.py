@@ -176,7 +176,7 @@ def pipeline_noisy(a: np.ndarray) -> List[np.ndarray]:
     (5) 정제본 + 스케일/이동
     """
     outs = []
-    # 1) 스무딩 + 약한 이상치 클리핑(IQR 기반)
+    # (1) 스무딩 + 약한 이상치 클리핑(IQR 기반)
     b = moving_average(a, SMOOTH_WINDOW)
     # IQR 클리핑
     q1, q3 = np.percentile(b, [25, 75], axis=0)
