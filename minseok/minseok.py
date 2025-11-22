@@ -7,7 +7,7 @@ from utils import *
 # 잠깐! | 이거 정규화 안하면 작은 원과 큰 원 또는 작은 직선에서 위험하다. 이거 기억하자
 
 # 1. 한 움직임 아래에 있는 txt 파일을 리스트로 추출
-MOVEMENT_TYPE = "diagonal_left" # circle | diagonal_left | diagonal_right | horizontal | vertical 
+MOVEMENT_TYPE = "vertical" # circle | diagonal_left | diagonal_right | horizontal | vertical 
 PATH = f"../augmented_data/{MOVEMENT_TYPE}"
 file_list = os.listdir(PATH)
 
@@ -53,7 +53,7 @@ for file_name in file_list:
     else :
         print("[CON] Horizontal 또는 Vertical이 아니기에 생략!")
         
-    result = ""
+    first_result = ""
     
     print("=============================================================")
     # breakpoint() # 이 Breakpoint는 x, y, z의 Range 확인을 위함입니다.
