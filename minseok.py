@@ -2,7 +2,7 @@ import os
 
 
 # 1. 한 움직임 아래에 있는 txt 파일을 리스트로 추출
-MOVEMENT_TYPE = "circle" # circle | diagonal_left | diagonal_right | horizontal | vertical 
+MOVEMENT_TYPE = "diagonal_left" # circle | diagonal_left | diagonal_right | horizontal | vertical 
 PATH = f"./augmented_data/{MOVEMENT_TYPE}"
 file_list = os.listdir(PATH)
 
