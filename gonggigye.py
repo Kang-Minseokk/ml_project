@@ -274,7 +274,7 @@ class Minseok:
 
 # ---- 재은 코드 ----
 class Jaeeun:
-# ---- RandomForest 기반 3D 궤적 분류 -----
+    # ---- RandomForest 기반 3D 궤적 분류 -----
     @staticmethod
     def load_xyz_from_txt(file_path):
         """궤적 파일에서 x,y,z 좌표 추출"""
@@ -407,7 +407,7 @@ class Jaeeun:
         """모델 파일 없을 시 백업 모델 생성"""
         # 최적화된 RandomForest (95.92% 정확도)
         model = RandomForestClassifier(
-            n_estimators=150,
+            n_estimators=150,  # 성능 최적화: 300→150
             random_state=42,
             max_depth=None,
             min_samples_split=2,
