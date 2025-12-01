@@ -277,13 +277,31 @@ class Jaeeun:
     # ---- RandomForest 기반 3D 궤적 분류 -----
     @staticmethod
     def load_xyz_from_txt(file_path):
-        """궤적 파일에서 x,y,z 좌표 추출"""
+        """궤적 파일에서 x,y,z 좌표 추출 (raw_data 형식 지원)"""
         coords = []
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     line = line.strip()
-                    if line and '/' in line:
+                    
+                    # raw_data 형식: r,39534,813639,61/63/38/61,...,392/-440/-84,0/0,...
+                    if line.startswith('r,'):
+                        parts = line.split(',')
+                        if len(parts) > 6 and parts[6]:  # 7번째 컬럼 (인덱스 6)
+                            xyz_part = parts[6]
+                            if '/' in xyz_part:
+                                xyz = xyz_part.split('/')
+                                if len(xyz) >= 3:
+                                    try:
+                                        x = float(xyz[0])
+                                        y = float(xyz[1])
+                                        z = float(xyz[2])
+                                        coords.append([x, y, z])
+                                    except ValueError:
+                                        continue
+                    
+                    # 기존 전처리된 형식: x/y/z
+                    elif line and '/' in line and not ',' in line:
                         parts = line.split('/')
                         if len(parts) >= 3:
                             try:
@@ -293,6 +311,7 @@ class Jaeeun:
                                 coords.append([x, y, z])
                             except ValueError:
                                 continue
+                                
         except FileNotFoundError:
             return np.array([])
         except Exception:
