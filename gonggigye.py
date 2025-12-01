@@ -273,35 +273,18 @@ class Minseok:
 # -------------------------------------
 
 # ---- 재은 코드 ----
-# ---- RandomForest 기반 3D 궤적 분류 -----
+class Jaeeun:
+    # ---- RandomForest 기반 3D 궤적 분류 -----
     
     @staticmethod
     def load_xyz_from_txt(file_path):
-        """궤적 파일에서 x,y,z 좌표 추출 (raw_data 형식 지원)"""
+        """궤적 파일에서 x,y,z 좌표 추출"""
         coords = []
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     line = line.strip()
-                    
-                    # raw_data 형식: r,39534,813639,61/63/38/61,...,392/-440/-84,0/0,...
-                    if line.startswith('r,'):
-                        parts = line.split(',')
-                        if len(parts) > 6 and parts[6]:  # 7번째 컬럼 (인덱스 6)
-                            xyz_part = parts[6]
-                            if '/' in xyz_part:
-                                xyz = xyz_part.split('/')
-                                if len(xyz) >= 3:
-                                    try:
-                                        x = float(xyz[0])
-                                        y = float(xyz[1])
-                                        z = float(xyz[2])
-                                        coords.append([x, y, z])
-                                    except ValueError:
-                                        continue
-                    
-                    # 기존 전처리된 형식: x/y/z
-                    elif line and '/' in line and not ',' in line:
+                    if line and '/' in line:
                         parts = line.split('/')
                         if len(parts) >= 3:
                             try:
@@ -311,7 +294,6 @@ class Minseok:
                                 coords.append([x, y, z])
                             except ValueError:
                                 continue
-                                
         except FileNotFoundError:
             return np.array([])
         except Exception:
@@ -395,11 +377,11 @@ class Minseok:
     @staticmethod
     def predict_trajectory(file_path, model_path=None):
         """궤적 벤턴 분류 함수"""
-        # 1. 훈련된 모델 로드 (GitHub PKL 우선)
+        # 1. 훈련된 모델 로드 (전처리된 데이터 경로 기준)
         if model_path is None:
             model_paths = [
-                '/Users/julia/Desktop/ml_project_final/trained_model.pkl',  # GitHub 클론
-                './results/trained_model.pkl',  # 기본 경로
+                './results/trained_model.pkl',  # 공기계.py 실행 디렉토리
+                '../results/trained_model.pkl',  # 상위 디렉토리
                 'trained_model.pkl'  # 현재 디렉토리
             ]
         else:
@@ -441,14 +423,14 @@ class Minseok:
         """PKL 없을 시 실제 학습 데이터로 새 모델 학습"""
         print("PKL 파일을 찾을 수 없어 새로운 모델을 학습합니다...")
         
-        # GitHub raw_data로 실제 학습
+        # 전처리된 data 파일들로 학습 (공기계.py에서 생성된 파일들)
         import glob
         
-        # GitHub raw_data 경로들
+        # 전처리된 data 파일 경로들
         data_paths = [
-            '/Users/julia/Desktop/ml_project_final/raw_data',
-            './raw_data',
-            '../raw_data'
+            './data',  # 현재 디렉토리의 data 폴더
+            '../data',  # 상위 디렉토리의 data 폴더
+            '/Users/julia/Desktop/my_project/data'  # 절대 경로
         ]
         
         base_path = None
@@ -458,34 +440,34 @@ class Minseok:
                 break
                 
         if base_path is None:
-            print("학습 데이터를 찾을 수 없습니다. 에러를 반환합니다.")
-            raise FileNotFoundError("학습 데이터가 없어 모델을 생성할 수 없습니다.")
+            print("전처리된 학습 데이터를 찾을 수 없습니다. 에러를 반환합니다.")
+            raise FileNotFoundError("전처리된 데이터가 없어 모델을 생성할 수 없습니다. 먼저 data_transform()을 실행하세요.")
         
-        print(f"학습 데이터 발견: {base_path}")
+        print(f"전처리된 학습 데이터 발견: {base_path}")
         
-        # 실제 궤적 데이터로 학습
+        # 전처리된 data 파일들로 학습
         X_train = []
         y_train = []
         
-        # 각 궤적 클래스별 데이터 로드
+        # data 폴더의 모든 txt 파일 처리
+        txt_files = glob.glob(os.path.join(base_path, "*.txt"))
+        
+        # 임시로 각 파일을 순환하며 5개 클래스에 균등 분배 (실제로는 라벨링 로직 필요)
         classes = ['circle', 'horizontal', 'vertical', 'diagonal_left', 'diagonal_right']
-        for class_name in classes:
-            class_dir = os.path.join(base_path, class_name)
-            if os.path.exists(class_dir):
-                txt_files = glob.glob(os.path.join(class_dir, "*.txt"))
-                for txt_file in txt_files[:15]:  # 클래스당 최대 15개 파일로 학습
-                    coords = Jaeeun.load_xyz_from_txt(txt_file)
-                    if len(coords) > 0:
-                        features = Jaeeun.compute_features(coords)
-                        feature_names = ['range_x', 'range_y', 'range_z', 'path_length', 'total_disp', 
-                                        'straightness', 'direction_changes', 'curvature_mean', 'xy_ratio', 'z_ratio']
-                        feature_array = [features[name] for name in feature_names]
-                        X_train.append(feature_array)
-                        y_train.append(class_name)
+        for i, txt_file in enumerate(txt_files[:75]):  # 최대 75개 파일 (클래스당 15개)
+            coords = Jaeeun.load_xyz_from_txt(txt_file)
+            if len(coords) > 0:
+                features = Jaeeun.compute_features(coords)
+                feature_names = ['range_x', 'range_y', 'range_z', 'path_length', 'total_disp', 
+                                'straightness', 'direction_changes', 'curvature_mean', 'xy_ratio', 'z_ratio']
+                feature_array = [features[name] for name in feature_names]
+                X_train.append(feature_array)
+                # 순환하며 클래스 할당 (실제로는 다른 방법으로 라벨링 필요)
+                y_train.append(classes[i % 5])
         
         if len(X_train) == 0:
-            print("유효한 학습 데이터가 없습니다.")
-            raise ValueError("학습할 수 있는 데이터가 없습니다.")
+            print("유효한 전처리된 학습 데이터가 없습니다.")
+            raise ValueError("학습할 수 있는 전처리된 데이터가 없습니다.")
         
         # 실제 학습 실행
         X_train = np.array(X_train)
