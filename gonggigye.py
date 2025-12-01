@@ -244,9 +244,9 @@ class Minseok:
         x_list, y_list, z_list = Minseok.make_list(file_path)
         x_range, y_range, z_range = Minseok.check_range(x_list, y_list, z_list)
 
-        if (y_range > x_range) and (y_range > z_range) : # Fix: 멘토님의 피드백을 받고 min에서 max로 수정
+        if (y_range > x_range) and (y_range > z_range) : # Fix: 멘토님의 피드백을 받고 min에서 max를 비교하도록 수정
             return "horizontal"
-        elif (z_range > x_range) and (z_range > y_range) : # Fix: 멘토님의 피드백을 받고 min에서 max로 수정
+        elif (z_range > x_range) and (z_range > y_range) : # Fix: 멘토님의 피드백을 받고 min에서 max를 비교하도록 수정
             return "vertical"
         else :
             return "unknown"
