@@ -273,8 +273,8 @@ class Minseok:
 # -------------------------------------
 
 # ---- 재은 코드 ----
-class Jaeeun:
-    # ---- RandomForest 기반 3D 궤적 분류 -----
+# ---- RandomForest 기반 3D 궤적 분류 -----
+    
     @staticmethod
     def load_xyz_from_txt(file_path):
         """궤적 파일에서 x,y,z 좌표 추출 (raw_data 형식 지원)"""
@@ -393,12 +393,27 @@ class Jaeeun:
         }
 
     @staticmethod
-    def predict_trajectory(file_path, model_path="./results/trained_model.pkl"):
+    def predict_trajectory(file_path, model_path=None):
         """궤적 벤턴 분류 함수"""
-        # 1. 훈련된 모델 로드
-        try:
-            model = joblib.load(model_path)
-        except:
+        # 1. 훈련된 모델 로드 (GitHub PKL 우선)
+        if model_path is None:
+            model_paths = [
+                '/Users/julia/Desktop/ml_project_final/trained_model.pkl',  # GitHub 클론
+                './results/trained_model.pkl',  # 기본 경로
+                'trained_model.pkl'  # 현재 디렉토리
+            ]
+        else:
+            model_paths = [model_path]
+            
+        model = None
+        for path in model_paths:
+            try:
+                model = joblib.load(path)
+                break
+            except:
+                continue
+                
+        if model is None:
             model = Jaeeun._train_backup_model()
         
         # 2. 궤적 데이터 로드
@@ -423,20 +438,72 @@ class Jaeeun:
 
     @staticmethod
     def _train_backup_model():
-        """모델 파일 없을 시 백업 모델 생성"""
-        # 최적화된 RandomForest (95.92% 정확도)
+        """PKL 없을 시 실제 학습 데이터로 새 모델 학습"""
+        print("PKL 파일을 찾을 수 없어 새로운 모델을 학습합니다...")
+        
+        # GitHub raw_data로 실제 학습
+        import glob
+        
+        # GitHub raw_data 경로들
+        data_paths = [
+            '/Users/julia/Desktop/ml_project_final/raw_data',
+            './raw_data',
+            '../raw_data'
+        ]
+        
+        base_path = None
+        for path in data_paths:
+            if os.path.exists(path):
+                base_path = path
+                break
+                
+        if base_path is None:
+            print("학습 데이터를 찾을 수 없습니다. 에러를 반환합니다.")
+            raise FileNotFoundError("학습 데이터가 없어 모델을 생성할 수 없습니다.")
+        
+        print(f"학습 데이터 발견: {base_path}")
+        
+        # 실제 궤적 데이터로 학습
+        X_train = []
+        y_train = []
+        
+        # 각 궤적 클래스별 데이터 로드
+        classes = ['circle', 'horizontal', 'vertical', 'diagonal_left', 'diagonal_right']
+        for class_name in classes:
+            class_dir = os.path.join(base_path, class_name)
+            if os.path.exists(class_dir):
+                txt_files = glob.glob(os.path.join(class_dir, "*.txt"))
+                for txt_file in txt_files[:15]:  # 클래스당 최대 15개 파일로 학습
+                    coords = Jaeeun.load_xyz_from_txt(txt_file)
+                    if len(coords) > 0:
+                        features = Jaeeun.compute_features(coords)
+                        feature_names = ['range_x', 'range_y', 'range_z', 'path_length', 'total_disp', 
+                                        'straightness', 'direction_changes', 'curvature_mean', 'xy_ratio', 'z_ratio']
+                        feature_array = [features[name] for name in feature_names]
+                        X_train.append(feature_array)
+                        y_train.append(class_name)
+        
+        if len(X_train) == 0:
+            print("유효한 학습 데이터가 없습니다.")
+            raise ValueError("학습할 수 있는 데이터가 없습니다.")
+        
+        # 실제 학습 실행
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
+        
+        print(f"학습 데이터: {len(X_train)}개 샘플")
+        print(f"클래스 분포: {dict(zip(*np.unique(y_train, return_counts=True)))}")
+        
+        # train_model.py와 동일한 설정으로 학습
         model = RandomForestClassifier(
-            n_estimators=150,  # 성능 최적화: 300→150
+            n_estimators=150,
             random_state=42,
             max_depth=None,
             min_samples_split=2,
             min_samples_leaf=1
         )
         
-        # 초기화용 더미 데이터
-        X_dummy = np.random.rand(100, 10)
-        y_dummy = np.random.choice(['circle', 'horizontal', 'vertical', 'diagonal_left', 'diagonal_right'], 100)
-        model.fit(X_dummy, y_dummy)
+        model.fit(X_train, y_train)
         
         return model
 # -------------------------------------
