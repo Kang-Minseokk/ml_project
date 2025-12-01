@@ -283,9 +283,9 @@ class Jaeeun:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 for line in f:
-                    line = line.strip()
-                    if line and '/' in line:
-                        parts = line.split('/')
+                    line = line.strip()                    
+                    if line :
+                        parts = line.split(' ')                        
                         if len(parts) >= 3:
                             try:
                                 x = float(parts[0])
@@ -399,7 +399,7 @@ class Jaeeun:
             model = Jaeeun._train_backup_model()
         
         # 2. 궤적 데이터 로드
-        coords = Jaeeun.load_xyz_from_txt(file_path)
+        coords = Jaeeun.load_xyz_from_txt(file_path)        
         if len(coords) == 0:
             return "unknown"
         
@@ -410,10 +410,11 @@ class Jaeeun:
         
         # 4. RandomForest 예측
         feature_array = np.array([features[name] for name in feature_names])
-        features_reshaped = feature_array.reshape(1, -1)
+        features_reshaped = feature_array.reshape(1, -1)        
+        feature_df = pd.DataFrame(features_reshaped, columns=feature_names) # Warning 제거를 위한 코드 추가
         
         try:
-            prediction = model.predict(features_reshaped)[0]
+            prediction = model.predict(feature_df)[0]            
             return prediction
         except:
             return "unknown"
