@@ -65,7 +65,7 @@ class Sungcheol:
     @staticmethod
     def change_numpy(file_path):
         """기훈님 파일에서 행렬 형식으로 변환"""
-        data = np.loadtxt(file_path, delimiter='/')
+        data = np.loadtxt(file_path, delimiter=' ')
         return data
     
     @staticmethod
@@ -133,7 +133,7 @@ class Sungcheol:
     @staticmethod
     def change_numpy_yz(file_path):
         """454/-420/3 change to numpy array"""
-        data = np.loadtxt(file_path, delimiter='/')
+        data = np.loadtxt(file_path, delimiter=' ')
         yz_data = data[:, 1:3]
         return yz_data
 
@@ -191,13 +191,13 @@ class Minseok:
         x_list, y_list, z_list = [], [], []
         with open(file_path, "r") as f :
             while True:
-                line = f.readline()
+                line = f.readline().strip()
                 if not line :
                     break
-                x, y, z = line.split('/')
-                x_list.append(int(x))
-                y_list.append(int(y))
-                z_list.append(int(z))
+                x, y, z = line.split(' ')
+                x_list.append(float(x))
+                y_list.append(float(y))
+                z_list.append(float(z))
 
         return x_list, y_list, z_list
     

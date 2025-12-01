@@ -15,14 +15,19 @@ def load_xyz_from_txt(path):
     
     with open(path, 'r') as f:
         for line in f:
-            line = line.strip()      # 앞뒤 공백 제거
+            line = line.strip()     # 앞뒤 공백 제거 
             if not line:
                 continue            # 빈 줄이면 skip
+            
+            if line.startswith('s'):
+                continue            # s로 시작하는 line은 제외시키기
+                        
+            line = line.split(',')[6]                     
 
             try:
-                # "x/y/z" 구조에서 '/' 기준으로 나눠서 float로 변환
+                # "x/y/z" 구조에서 '/' 기준으로 나눠서 float로 변환                
                 x, y, z = map(float, line.split('/'))
-                coords.append([x, y, z])
+                coords.append([x, y, z])                               
             except ValueError:
                 # 숫자가 아닌 줄이 들어가 있을 가능성을 대비
                 print(f"Warning: Invalid line in file {path}: {line}")
