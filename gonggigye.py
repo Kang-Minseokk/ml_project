@@ -383,12 +383,13 @@ class Jaeeun:
     @staticmethod
     def predict_trajectory(file_path, model_path=None):
         """궤적 벤턴 분류 함수 (12개 특성 사용)"""
-        # 1. 훈련된 모델 로드 (전처리된 데이터 경로 기준)
+        # 1. 훈련된 모델 로드 (공기계.py 실행 디렉토리 기준)
         if model_path is None:
             model_paths = [
-                './results/trained_model.pkl',  # 공기계.py 실행 디렉토리
-                '../results/trained_model.pkl',  # 상위 디렉토리
-                'trained_model.pkl'  # 현재 디렉토리
+                'trained_model.pkl',  # 현재 디렉토리 (공기계.py와 동일 위치)
+                './trained_model.pkl',  
+                './results/trained_model.pkl',  
+                '../results/trained_model.pkl'  
             ]
         else:
             model_paths = [model_path]
