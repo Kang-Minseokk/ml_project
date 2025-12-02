@@ -306,7 +306,7 @@ class Jaeeun:
 
     @staticmethod
     def compute_features(coords):
-        """궤적의 물리적 특성 10가지 계산"""
+        """궤적의 물리적 특성 12가지 계산 (diagonal 구분 개선)"""
         if len(coords) == 0:
             return {}
         
@@ -361,6 +361,10 @@ class Jaeeun:
         xy_ratio = xy_energy / total_energy
         z_ratio = z_energy / total_energy
 
+        # Diagonal 구분 개선용 특성 추가
+        yz_slope = Jaeeun._calculate_yz_slope(Y, Z)
+        yz_correlation = Jaeeun._calculate_yz_correlation(Y, Z)
+
         return {
             "range_x": range_x,
             "range_y": range_y,
@@ -371,12 +375,14 @@ class Jaeeun:
             "direction_changes": direction_changes,
             "curvature_mean": curvature_mean,
             "xy_ratio": xy_ratio,
-            "z_ratio": z_ratio
+            "z_ratio": z_ratio,
+            "yz_slope": yz_slope,
+            "yz_correlation": yz_correlation
         }
 
     @staticmethod
     def predict_trajectory(file_path, model_path=None):
-        """궤적 벤턴 분류 함수"""
+        """궤적 벤턴 분류 함수 (12개 특성 사용)"""
         # 1. 훈련된 모델 로드 (전처리된 데이터 경로 기준)
         if model_path is None:
             model_paths = [
@@ -403,10 +409,11 @@ class Jaeeun:
         if len(coords) == 0:
             return "unknown"
         
-        # 3. 10가지 특성 추출
+        # 3. 12가지 특성 추출 (diagonal 구분 개선)
         features = Jaeeun.compute_features(coords)
         feature_names = ['range_x', 'range_y', 'range_z', 'path_length', 'total_disp', 
-                        'straightness', 'direction_changes', 'curvature_mean', 'xy_ratio', 'z_ratio']
+                        'straightness', 'direction_changes', 'curvature_mean', 'xy_ratio', 'z_ratio',
+                        'yz_slope', 'yz_correlation']  # diagonal 구분용 추가 특성
         
         # 4. RandomForest 예측
         feature_array = np.array([features[name] for name in feature_names])
@@ -421,11 +428,10 @@ class Jaeeun:
 
     @staticmethod
     def _train_backup_model():
-        """PKL 없을 시 실제 학습 데이터로 새 모델 학습"""
+        """PKL 없을 시 실제 학습 데이터로 새 모델 학습 (12개 특성)"""
         print("PKL 파일을 찾을 수 없어 새로운 모델을 학습합니다...")
         
         # 전처리된 data 파일들로 학습 (공기계.py에서 생성된 파일들)
-        import glob
         
         # 전처리된 data 파일 경로들
         data_paths = [
@@ -460,7 +466,8 @@ class Jaeeun:
             if len(coords) > 0:
                 features = Jaeeun.compute_features(coords)
                 feature_names = ['range_x', 'range_y', 'range_z', 'path_length', 'total_disp', 
-                                'straightness', 'direction_changes', 'curvature_mean', 'xy_ratio', 'z_ratio']
+                                'straightness', 'direction_changes', 'curvature_mean', 'xy_ratio', 'z_ratio',
+                                'yz_slope', 'yz_correlation']  # diagonal 구분용 특성 추가
                 feature_array = [features[name] for name in feature_names]
                 X_train.append(feature_array)
                 # 순환하며 클래스 할당 (실제로는 다른 방법으로 라벨링 필요)
@@ -489,6 +496,38 @@ class Jaeeun:
         model.fit(X_train, y_train)
         
         return model
+    
+    @staticmethod
+    def _calculate_yz_slope(Y, Z):
+        """YZ 평면에서의 회귀 직선 기울기 계산 (diagonal 구분용)
+        
+        diagonal_left: Y가 증가하면 Z도 증가 → 양의 기울기
+        diagonal_right: Y가 증가하면 Z는 감소 → 음의 기울기
+        """
+        if len(Y) < 2 or np.std(Y) < 1e-6:
+            return 0.0
+        
+        # Y에 대한 Z의 선형 회귀 기울기
+        slope, _ = np.polyfit(Y, Z, 1)
+        return slope
+
+    @staticmethod
+    def _calculate_yz_correlation(Y, Z):
+        """YZ 좌표간 피어슨 상관계수 계산 (diagonal 구분용)
+        
+        diagonal_left: 양의 상관관계
+        diagonal_right: 음의 상관관계
+        """
+        if len(Y) < 2:
+            return 0.0
+        
+        # 표준편차가 0에 가까우면 상관계수 계산 불가
+        if np.std(Y) < 1e-6 or np.std(Z) < 1e-6:
+            return 0.0
+        
+        correlation = np.corrcoef(Y, Z)[0, 1]
+        return correlation if not np.isnan(correlation) else 0.0
+        
 # -------------------------------------
 
 file_path = "raw_data"
