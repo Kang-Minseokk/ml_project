@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.tree import export_text
@@ -127,15 +128,17 @@ def plot_scatter(df, x_feature, y_feature, save_path):
 
 
 # ---------------------------------------------------------
-# augmented_data 폴더에서 데이터를 읽어서 DataFrame(df) 생성
+# raw_data 폴더에서 데이터를 읽어서 DataFrame(df) 생성  
 # ---------------------------------------------------------
 # 현재 스크립트가 있는 디렉토리를 기준으로 경로 설정
 script_dir = os.path.dirname(os.path.abspath(__file__))
-data_path = os.path.join(script_dir, "augmented_data")
+data_path = os.path.join(script_dir, "raw_data")
 
 df = build_dataset(data_path)
 
 print("전체 데이터 개수:", len(df))
+print(f"특성 개수: {len(df.columns) - 2}개 (diagonal 구분 개선)")  # label, file 제외
+print(f"특성 이름: {list(df.drop(columns=['label', 'file']).columns)}")
 print("\n클래스별 데이터 개수:")
 print(df['label'].value_counts())
 
@@ -153,18 +156,32 @@ X_train, X_test, y_train, y_test, files_train, files_test = train_test_split(
 )
 
 # ---------------------------------------------------------
-# RandomForest 모델 정의 및 학습
+# RandomForest 모델 정의 및 학습 (diagonal 구분 최적화)
 # ---------------------------------------------------------
 model = RandomForestClassifier(
-    n_estimators=150,
-    max_depth=None,
-    random_state=0
+    n_estimators=150,    # 트리 개수 최적화
+    max_depth=20,        # 과적합 방지
+    min_samples_split=5, # 일반화 향상
+    min_samples_leaf=2,  # 과적합 방지
+    random_state=42      # 재현성
 )
 model.fit(X_train, y_train)
 
 # 결과 저장 폴더 생성
 output_dir = os.path.join(script_dir, 'results')
 ensure_dir(output_dir)
+
+# ---------------------------------------------------------
+# 0) 학습된 모델 저장 (12개 특성)
+# ---------------------------------------------------------
+model_path = os.path.join(output_dir, 'trained_model.pkl')
+joblib.dump(model, model_path)
+print(f"모델 저장 완료: {model_path}")
+
+# 현재 폴더에도 복사 (gonggigye.py용)
+current_model_path = os.path.join(script_dir, 'trained_model.pkl')
+joblib.dump(model, current_model_path)
+print(f"현재 폴더 모델 저장: {current_model_path}")
 
 # ---------------------------------------------------------
 # 1) 정확도 저장

@@ -127,7 +127,20 @@ def compute_features(coords):
     xy_ratio = xy_energy / total_energy
     z_ratio  = z_energy / total_energy
 
-    # 하나의 trajectory에 대한 feature dict 반환
+    # -----------------------------------------------------
+    # 9) YZ 평면 기울기 (diagonal 구분 개선용)
+    #    → Y에 대한 Z의 선형 회귀 기울기
+    #    → diagonal_left (양의 기울기) vs diagonal_right (음의 기울기)
+    # -----------------------------------------------------
+    yz_slope = calculate_yz_slope(Y, Z)
+    
+    # -----------------------------------------------------
+    # 10) YZ 상관계수 (diagonal 구분 보조용)
+    #     → Y와 Z가 얼마나 선형적으로 연관되는지
+    # -----------------------------------------------------
+    yz_correlation = calculate_yz_correlation(Y, Z)
+
+    # 하나의 trajectory에 대한 feature dict 반환 (12개 특성)
     return {
         "range_x": range_x,
         "range_y": range_y,
@@ -138,8 +151,32 @@ def compute_features(coords):
         "direction_changes": direction_changes,
         "curvature_mean": curvature_mean,
         "xy_ratio": xy_ratio,
-        "z_ratio": z_ratio
+        "z_ratio": z_ratio,
+        "yz_slope": yz_slope,
+        "yz_correlation": yz_correlation
     }
+
+
+def calculate_yz_slope(Y, Z):
+    """YZ 평면에서의 회귀 직선 기울기 계산 (diagonal 구분용)"""
+    if len(Y) < 2 or np.std(Y) < 1e-6:
+        return 0.0
+    
+    # Y에 대한 Z의 선형 회귀 기울기
+    slope, _ = np.polyfit(Y, Z, 1)
+    return slope
+
+def calculate_yz_correlation(Y, Z):
+    """YZ 좌표간 피어슨 상관계수 계산 (diagonal 구분용)"""
+    if len(Y) < 2:
+        return 0.0
+    
+    # 표준편차가 0에 가까우면 상관계수 계산 불가
+    if np.std(Y) < 1e-6 or np.std(Z) < 1e-6:
+        return 0.0
+    
+    correlation = np.corrcoef(Y, Z)[0, 1]
+    return correlation if not np.isnan(correlation) else 0.0
 
 
 # ---------------------------------------------------------
