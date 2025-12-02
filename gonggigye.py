@@ -412,6 +412,18 @@ class Jaeeun:
         
         # 3. 12가지 특성 추출 (diagonal 구분 개선)
         features = Jaeeun.compute_features(coords)
+        
+        # *** 규칙 기반 diagonal 우선 분류 ***
+        yz_slope = features.get('yz_slope', 0)
+        yz_correlation = features.get('yz_correlation', 0)
+        
+        # Diagonal 패턴 강제 인식
+        if abs(yz_slope) > 0.1 and abs(yz_correlation) > 0.1:
+            if yz_slope > 0:
+                return "diagonal_left"
+            else:
+                return "diagonal_right"
+        
         feature_names = ['range_x', 'range_y', 'range_z', 'path_length', 'total_disp', 
                         'straightness', 'direction_changes', 'curvature_mean', 'xy_ratio', 'z_ratio',
                         'yz_slope', 'yz_correlation']  # diagonal 구분용 추가 특성
