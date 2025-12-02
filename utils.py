@@ -5,66 +5,11 @@ import pandas as pd
 import joblib
 from sklearn.ensemble import RandomForestClassifier
 
-# ---- 초기 데이터 파일 병합 -----
-def collect_txt_files(root_dir):
-    txt_files = []
-    for dirpath, dirnames, filenames in os.walk(root_dir):
-        for name in filenames:
-            if name.lower().endswith(".txt"):
-                full_path = os.path.join(dirpath, name)
-                txt_files.append(full_path)
-    txt_files.sort()
-    return txt_files
-
-def merge_all_txt(root_dir, out_file):
-    txt_files = collect_txt_files(root_dir)
-
-    with open(out_file, "w", encoding="utf-8") as out_f:
-        for path in txt_files:
-            with open(path, "r", encoding="utf-8") as f:
-                for line in f:
-                    if not line.strip():
-                        continue
-                    out_f.write(line.rstrip("\n") + "\n")
-# -------------------------------------
-
-def data_transform(file_path, prefix='data'):
-    """데이터 전처리"""
-    blocks = []
-    current_block = []
-
-    with open(file_path, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-
-            if line.startswith('s'):
-                if current_block:
-                    blocks.append(current_block)
-                    current_block = []
-                continue
-
-            cols = line.split(',')
-            if len(cols) > 6 and cols[6] != '':
-                current_block.append(cols[6])
-
-    if current_block:
-        blocks.append(current_block)
-
-    for i, block in enumerate(blocks, start=1):
-        out_path = f'data/{prefix}{i}.txt'
-        with open(out_path, 'w') as out_f:
-            out_f.write('\n'.join(block))
-
-    return blocks
-
 # ---- 성철 코드 -----
-class Sungcheol:
+class Sungcheol:    
     # ---- 원과 직선을 결정하는 코드-----
     @staticmethod
-    def change_numpy(file_path):
-        """기훈님 파일에서 행렬 형식으로 변환"""
+    def change_numpy(file_path):        
         data = np.loadtxt(file_path, delimiter=' ')
         return data
     
@@ -493,10 +438,6 @@ class Jaeeun:
 
 file_path = "raw_data"
 out_path = "final_data.txt"
-
-# merge_all_txt(file_path, out_path) # 데이터 병합
-
-# data_transform(out_path, prefix='data') # 데이터 전처리
 
 def main():
     path = "data"
