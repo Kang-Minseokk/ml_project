@@ -358,28 +358,37 @@ class Jaeeun:
         # 3. 12가지 특성 추출 (diagonal 구분 개선)
         features = Jaeeun.compute_features(coords)
         
-        # *** 규칙 기반 diagonal 우선 분류 ***
-        yz_slope = features.get('yz_slope', 0)
-        yz_correlation = features.get('yz_correlation', 0)
-        
-        # Diagonal 패턴 강제 인식
-        if abs(yz_slope) > 0.1 and abs(yz_correlation) > 0.1:
-            if yz_slope > 0:
-                return "diagonal_left"
-            else:
-                return "diagonal_right"
-        
         feature_names = ['range_x', 'range_y', 'range_z', 'path_length', 'total_disp', 
                         'straightness', 'direction_changes', 'curvature_mean', 'xy_ratio', 'z_ratio',
                         'yz_slope', 'yz_correlation']  # diagonal 구분용 추가 특성
         
-        # 4. RandomForest 예측
+        # 4. RandomForest 예측 (먼저 실행)
         feature_array = np.array([features[name] for name in feature_names])
         features_reshaped = feature_array.reshape(1, -1)        
         feature_df = pd.DataFrame(features_reshaped, columns=feature_names) # Warning 제거를 위한 코드 추가
         
         try:
-            prediction = model.predict(feature_df)[0]            
+            prediction = model.predict(feature_df)[0]
+            
+            # *** Diagonal만 세밀하게 후처리 ***
+            # RandomForest가 diagonal 관련으로 예측했을 때만 규칙 기반으로 세분화
+            if prediction in ["diagonal_left", "diagonal_right"]:
+                yz_slope = features.get('yz_slope', 0)
+                yz_correlation = features.get('yz_correlation', 0)
+                range_x = features.get('range_x', 0)
+                range_y = features.get('range_y', 0)
+                range_z = features.get('range_z', 0)
+                
+                # Diagonal 패턴의 특징: Y, Z 축에서 주요 움직임이 있어야 함
+                is_diagonal_movement = (range_y > range_x * 0.5 and range_z > range_x * 0.5)
+                has_clear_slope = abs(yz_slope) > 0.1 and abs(yz_correlation) > 0.1
+                
+                if is_diagonal_movement and has_clear_slope:
+                    if yz_slope > 0:
+                        return "diagonal_left"
+                    else:
+                        return "diagonal_right"
+            
             return prediction
         except:
             return "unknown"
