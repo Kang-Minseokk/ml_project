@@ -50,7 +50,13 @@ for file_path in file_path_list:
 
 # [NOTE] STEP3: 각 모델의 결과를 Voting 해줍시다
     results = [sung_result, min_result, jae_result]
-    vote = Counter(results).most_common(1)[0][0]
+    cnt = Counter(results)
+    top_freq = cnt.most_common(1)[0][1]
+    num_top = sum(1 for k, v in cnt.items() if v == top_freq)
+    if num_top > 1:
+        vote = "TIE"
+    else:
+        vote = cnt.most_common(1)[0][0]
 
     print(f"[INFO]⭐️ 최종 Voting 결과 ⭐️: {vote}")    
     print("=" * 50)
