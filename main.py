@@ -63,4 +63,4 @@ for file_path in file_path_list:
     print(f"[INFO]⭐️ 최종 Voting 결과 ⭐️: {vote}")    
     print("=" * 50)
     print("\n")
-    breakpoint()
+    breakpoint() # 결과 확인의 편의를 위해서 breakpoint를 설정해두었습니다.
