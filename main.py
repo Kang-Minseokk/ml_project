@@ -65,7 +65,7 @@ for file_path in file_path_list:
     if vote in real_file_name:
         correct_cnt += 1    
 
-    print(f"[INFO]⭐️ 최종 Voting 결과 ⭐️: {vote}")    
+    print(f"[INFO] ⭐️ 최종 Voting 결과 ⭐️ \n[RESULT] {real_file_name}: {vote}")    
     print("=" * 50)
     print("\n")
     breakpoint() # 결과 확인의 편의를 위해서 breakpoint를 설정해두었습니다.
