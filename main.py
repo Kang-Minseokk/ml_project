@@ -67,7 +67,6 @@ for file_path in file_path_list:
 
     print(f"[INFO] ⭐️ 최종 Voting 결과 ⭐️ \n[RESULT] {real_file_name}: {vote}")    
     print("=" * 50)
-    print("\n")
     breakpoint() # 결과 확인의 편의를 위해서 breakpoint를 설정해두었습니다.
     
 tot_acc = (correct_cnt / total_cnt) * 100
