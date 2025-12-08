@@ -8,7 +8,7 @@ PATH = "data"
 file_list = os.listdir(PATH)        
 # print(f"[DEBUG] 입력 파일 개수 : {len(file_list)}")
 
-for file_name in file_list:
+for file_name in file_list:    
     file_path = os.path.join(PATH, file_name)
     preprocessed_data = load_xyz_from_txt(file_path)
     
@@ -26,7 +26,9 @@ for name in os.listdir(dir_path):
     file_path_list.append(os.path.join(dir_path, name))
 
 for file_path in file_path_list:
-    print(f"[INFO] 파일 이름 : {file_path}")
+    real_file_name = file_path.split('.')[0][25:]
+    print("=" * 50)
+    print(f"[INFO] 파일 이름 : {real_file_name}")
     # 성철님 모델 동작
     sung_result = Sungcheol.circle_check(file_path)
     if sung_result != 'circle':
@@ -61,3 +63,4 @@ for file_path in file_path_list:
     print(f"[INFO]⭐️ 최종 Voting 결과 ⭐️: {vote}")    
     print("=" * 50)
     print("\n")
+    breakpoint()
