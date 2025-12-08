@@ -5,7 +5,9 @@ from collections import Counter
 
 # [NOTE] STEP1: 입력 데이터를 전처리 후 processed_data에 저장을 해줍니다.
 PATH = "data"
-file_list = os.listdir(PATH)        
+file_list = os.listdir(PATH)
+correct_cnt = 0
+total_cnt = len(os.listdir(PATH))
 # print(f"[DEBUG] 입력 파일 개수 : {len(file_list)}")
 
 for file_name in file_list:    
@@ -33,7 +35,7 @@ for file_path in file_path_list:
     sung_result = Sungcheol.circle_check(file_path)
     if sung_result != 'circle':
         sung_result = Sungcheol.line_check(file_path)    
-    print(f"[INFO] Sungcheol 모델 출력값: {sung_result}")
+    print(f"[INFO] First 모델 출력값: {sung_result}")
     
     # 민석씨 모델 동작
     min_result = Minseok.minseok_circle(file_path)
@@ -43,12 +45,12 @@ for file_path in file_path_list:
         min_result = Minseok.minseok_check2(file_path)
     if min_result == 'linear':
         min_result = Minseok.minseok_check1(file_path)    
-    print(f"[INFO]  Minseok 모델 출력값 : {min_result}")
+    print(f"[INFO] Second 모델 출력값 : {min_result}")
     
     # 재은님 모델 동작
     jae_result = Jaeeun.predict_trajectory(file_path)
     
-    print(f"[INFO]   Jaeeun 모델 출력값 : {jae_result}")
+    print(f"[INFO] Random Forest 모델 출력값 : {jae_result}")
 
 # [NOTE] STEP3: 각 모델의 결과를 Voting 해줍시다
     results = [sung_result, min_result, jae_result]
@@ -59,8 +61,16 @@ for file_path in file_path_list:
         vote = "TIE"
     else:
         vote = cnt.most_common(1)[0][0]
+        
+    if vote in real_file_name:
+        correct_cnt += 1    
 
     print(f"[INFO]⭐️ 최종 Voting 결과 ⭐️: {vote}")    
     print("=" * 50)
     print("\n")
     breakpoint() # 결과 확인의 편의를 위해서 breakpoint를 설정해두었습니다.
+    
+tot_acc = (correct_cnt / total_cnt) * 100
+print("🤩🤩🤩🤩")
+print("Final Result", tot_acc, "%")
+print("🤩🤩🤩🤩")
